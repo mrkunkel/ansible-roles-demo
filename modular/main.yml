@@ -1,0 +1,31 @@
+---
+- hosts: all
+  become: yes
+  become_method: sudo
+  gather_facts: False
+
+  vars:
+    install_dir: "/opt/snipeit"
+    webroot: "{{ install_dir }}/public"
+    server_url: "https://snipemrk.mulesoft.com"
+    server_fqdn: "snipeitmrk.mulesoft.com"
+    server_crt: star_corp_mulesoft_com.crt
+    server_key: star_corp_mulesoft_com.key
+    db_host: "snipemrk.us-west-2.rds.amazonaws.com"
+    db_name: "snipedb"
+    db_user: "snipedbuser"
+    db_pass: "snipedbpass"
+    mail_host: "smtp2.gmail2.com"
+    mail_full: "example@example.com"
+    mail_user: "mailuser"
+    mail_pass: "mailpass"
+
+  roles:
+    - dep-git
+    - { role: 'dep-nginx', action: 'install' }
+    - { role: 'dep-php56', action: 'install' }
+    - { role: 'svc-snipeit', action: 'install' }
+    - dep-composer
+    - { role: 'svc-snipeit', action: 'configure' }
+    - { role: 'dep-nginx', action: 'configure' }
+    - { role: 'dep-php56', action: 'configure' }

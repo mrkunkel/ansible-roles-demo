@@ -1,0 +1,8 @@
+- name: "Update PHP-FPM Configuration"
+  lineinfile:
+    dest: "/etc/php-fpm-5.6.d/www.conf"
+    regexp: "{{ item.regx }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regx: '^user = apache', line: 'user = nginx' }
+    - { regx: '^group = apache', line: 'group = nginx' }

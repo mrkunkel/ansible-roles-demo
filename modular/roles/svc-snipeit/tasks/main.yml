@@ -1,0 +1,10 @@
+---
+# tasks file for svc-snipeit
+
+- name: "Install SnipeIT"
+  import_tasks: install.yml
+  when: action|lower == 'install'
+
+- name: "Configure SnipeIT"
+  import_tasks: configure.yml
+  when: action|lower == 'configure'

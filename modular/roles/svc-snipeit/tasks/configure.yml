@@ -1,0 +1,16 @@
+- name: "Generate SSL Certs"
+  copy: src={{ item.src}} dest={{ item.dest}}
+  with_items:
+    - { src: '{{ server_crt }}', dest: '{{ install_dir }}/ms_snipeit.crt' }
+    - { src: '{{ server_key }}', dest: '{{ install_dir }}/ms_snipeit.key' }
+
+- name: "Generate Configuration Files"
+  template: src={{ item.tmpl }} dest={{ item.dest }}
+  with_items:
+    - { tmpl: 'env.j2', dest: '/opt/snipeit/.env' }
+    - { tmpl: 'snipeit.j2', dest: '/etc/nginx/conf.d/snipeit.conf' }
+
+- name: "Update config file permissions"
+  file: path={{ item }} owner=nginx mode=0755
+  with_items:
+    - "{{ install_dir }}/.env"

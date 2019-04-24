@@ -1,0 +1,5 @@
+---
+# tasks file for task-ping
+
+- name: "Ping Host"
+  ping:

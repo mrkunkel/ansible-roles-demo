@@ -1,0 +1,5 @@
+---
+# tasks file for dep-git
+
+- name: "Install Git"
+  yum: name=git state=present

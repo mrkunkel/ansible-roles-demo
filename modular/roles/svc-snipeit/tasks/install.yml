@@ -1,0 +1,19 @@
+- name: "Create installation directory"
+  file: path={{ item.path }} state=directory recurse=yes owner=ec2-user
+  with_items:
+    - { path: '/opt/snipeit' }
+
+- name: "Clone repo from github"
+  git:
+    repo: https://github.com/snipe/snipe-it
+    dest: /opt/snipeit
+
+- name: "Update storage and webroot permissions"
+  file: path={{ item }} owner=nginx mode=0755 recurse=yes
+  with_items:
+    - "{{ install_dir }}/public"
+    - "{{ install_dir }}/storage"
+    - "{{ install_dir }}/bootstrap"
+
+- name: "Just for fun"
+  get_url: "url=https://muley.life/favicon.ico dest={{ install_dir}}/public/favicon.ico"

@@ -1,0 +1,8 @@
+---
+# tasks file for os-update
+
+- name: "Update OS"
+  include_tasks: "{{ item }}"
+  with_first_found:
+  - "{{ ansible_distribution | lower }}.yml"
+  - "{{ ansible_os_family | lower }}.yml"

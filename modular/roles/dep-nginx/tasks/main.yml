@@ -1,0 +1,10 @@
+---
+# tasks file for dep-nginx
+
+- name: "Install nginx"
+  yum: name=nginx state=latest
+  when: action|lower == 'install'
+
+- name: "Configure nginx"
+  import_tasks: configure.yml
+  when: action|lower == 'configure'

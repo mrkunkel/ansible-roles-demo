@@ -1,0 +1,10 @@
+---
+# tasks file for dep-php56
+
+- name: "Install php56"
+  yum: name=php56,php56-gd,php56-mysqlnd,php56-fpm,php56-pdo,php56-mbstring,php56-ldap,php56-mcrypt state=latest
+  when: action|lower == 'install'
+
+- name: "Configure php56"
+  import_tasks: configure.yml
+  when: action|lower == 'configure'

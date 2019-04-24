@@ -1,0 +1,99 @@
+---
+- hosts: all
+  become: yes
+  become_method: sudo
+  gather_facts: False
+
+  vars:
+    install_dir: "/opt/snipeit"
+    webroot: "{{ install_dir }}/public"
+    server_url: "https://snipemrk.mulesoft.com"
+    server_fqdn: "snipemrk.mulesoft.com"
+    server_crt: star_corp_mulesoft_com.crt
+    server_key: star_corp_mulesoft_com.key
+    db_host: "snipemrk.us-west-2.rds.amazonaws.com"
+    db_name: "snipedb"
+    db_user: "snipedbuser"
+    db_pass: "snipedbpass"
+    mail_host: "smtp2.gmail2.com"
+    mail_full: "example@example.com"
+    mail_user: "mailuser"
+    mail_pass: "mailpass"
+
+  tasks:
+    - name: "Create installation directory"
+      file: path={{ item.path }} state=directory recurse=yes owner=ec2-user
+      with_items:
+        - { path: '/opt/snipeit' }
+
+    - name: "Install Git"
+      yum: name=git state=present
+
+    - name: "Clone repo from github"
+      git:
+        repo: https://github.com/snipe/snipe-it
+        dest: /opt/snipeit
+
+    - name: "Install nginx, php56"
+      yum: name=nginx,php56,php56-gd,php56-mysqlnd,php56-fpm,php56-pdo,php56-mbstring,php56-ldap,php56-mcrypt state=latest
+
+    - name: "Update storage and webroot permissions"
+      file: path={{ item }} owner=nginx mode=0755 recurse=yes
+      with_items:
+        - "{{ install_dir }}/public"
+        - "{{ install_dir }}/storage"
+        - "{{ install_dir }}/bootstrap"
+
+    - name: "Just for fun"
+      get_url: "url=https://muley.life/favicon.ico dest={{ install_dir}}/public/favicon.ico"
+
+    - name: "Verify that Composer is installed"
+      stat: "path=/usr/local/bin/composer"
+      register: composer_bin
+
+    - name: "Download Composer"
+      get_url:
+        url: https://getcomposer.org/installer
+        dest: /tmp/composer-setup.php
+        sha256sum: 6de4cae7faf7bc6321c0a209a502c85763499932cbbfbb8b207784c9061fbc86
+        mode: 0755
+      when: not composer_bin.stat.exists
+
+    - name: "Prepare Composer"
+      command: php composer-setup.php --install-dir=/usr/local/bin --filename=composer chdir=/tmp
+      when: not composer_bin.stat.exists
+
+    - name: "Create Composer SymLink"
+      file:
+        src: /usr/local/bin/composer
+        dest: /usr/bin/composer
+        owner: root
+        group: root
+        state: link
+
+    - name: "Generate SSL Certs"
+      copy: src={{ item.src}} dest={{ item.dest}}
+      with_items:
+        - { src: '{{ server_crt }}', dest: '{{ install_dir }}/ms_snipeit.crt' }
+        - { src: '{{ server_key }}', dest: '{{ install_dir }}/ms_snipeit.key' }
+
+    - name: "Generate Configuration Files"
+      template: src={{ item.tmpl }} dest={{ item.dest }}
+      with_items:
+        - { tmpl: 'env.j2', dest: '/opt/snipeit/.env' }
+        - { tmpl: 'nginx.j2', dest: '/etc/nginx/nginx.conf' }
+        - { tmpl: 'snipeit.j2', dest: '/etc/nginx/conf.d/snipeit.conf' }
+
+    - name: "Update config file permissions"
+      file: path={{ item }} owner=nginx mode=0755
+      with_items:
+        - "{{ install_dir }}/.env"
+
+    - name: "Update PHP-FPM Configuration"
+      lineinfile:
+        dest: "/etc/php-fpm-5.6.d/www.conf"
+        regexp: "{{ item.regx }}"
+        line: "{{ item.line }}"
+      with_items:
+        - { regx: '^user = apache', line: 'user = nginx' }
+        - { regx: '^group = apache', line: 'group = nginx' }
